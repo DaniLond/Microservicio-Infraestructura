@@ -3,8 +3,8 @@ name: Deploy Infra and Apps
 on:
   push:
     branches:
-      - main
       - master
+      - main
   workflow_dispatch:
 # ===================================================================
 # CONFIGURACIÓN CENTRALIZADA
@@ -16,7 +16,7 @@ env:
 
   # --- Repositorio de Desarrollo (Destino) ---
   TARGET_REPO: microservices-example
-  TARGET_REPO_BRANCH: main # Rama del repo de apps a la que apuntará el trigger
+  TARGET_REPO_BRANCH: master # Rama del repo de apps a la que apuntará el trigger
 
   # --- Secretos Centralizados ---
   # Token con permisos para la API de GitHub y la gestión de secretos.
@@ -27,7 +27,7 @@ env:
   ARM_ACCESS_KEY: ${{ secrets.BUCKET_KEY }}
 
   # --- Configuración del Backend de Terraform ---
-  TERRAFORM_BACKEND_STORAGE_ACCOUNT: mistorageisa
+  TERRAFORM_BACKEND_STORAGE_ACCOUNT: stterraformdev
   TERRAFORM_BACKEND_CONTAINER_NAME: tfstate
   TERRAFORM_BACKEND_RESOURCE_GROUP: rg-terraform
 
