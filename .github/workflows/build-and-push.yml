@@ -15,7 +15,7 @@ env:
   OWNER: ${{ github.repository_owner }}
 
   # --- Repositorio de Desarrollo (Destino) ---
-  TARGET_REPO: microservices-example
+  TARGET_REPO: microservices-app-example
   TARGET_REPO_BRANCH: main # Rama del repo de apps a la que apuntará el trigger
 
   # --- Secretos Centralizados ---
