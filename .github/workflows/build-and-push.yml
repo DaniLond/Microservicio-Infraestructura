@@ -3,8 +3,8 @@ name: Deploy Infra and Apps
 on:
   push:
     branches:
-      - main
       - master
+      - main
   workflow_dispatch:
 # ===================================================================
 # CONFIGURACIÓN CENTRALIZADA
@@ -27,7 +27,7 @@ env:
   ARM_ACCESS_KEY: ${{ secrets.BUCKET_KEY }}
 
   # --- Configuración del Backend de Terraform ---
-  TERRAFORM_BACKEND_STORAGE_ACCOUNT: mistorageisa
+  TERRAFORM_BACKEND_STORAGE_ACCOUNT: stterraformdev
   TERRAFORM_BACKEND_CONTAINER_NAME: tfstate
   TERRAFORM_BACKEND_RESOURCE_GROUP: rg-terraform
 
