@@ -100,16 +100,11 @@ jobs:
           
           echo "Secrets have been successfully set in the target repository."
   # TRABAJO 2: Verificar si las imágenes ya existen en ACR
-  check-images-in-acr:
-    name: 'Check for Existing Images in ACR'
+  check-and-build-apps:
+    name: 'Check for Existing Images and Build if Necessary'
     needs: deploy-infra-base
     runs-on: ubuntu-latest
     environment: production
-
-    outputs:
-      skip_build: ${{ steps.check_images.outputs.skip_build }}
-      build_inputs: ${{ steps.check_images.outputs.build_inputs }}
-
     steps:
       - name: Log in to Azure
         uses: azure/login@v1
@@ -120,10 +115,9 @@ jobs:
       - name: Log in to ACR
         run: az acr login --name ${{ needs.deploy-infra-base.outputs.acr_login_server }}
 
-      - name: Check which images are missing
-        id: check_images
+      - name: Check for Missing Images and Trigger Build
+        id: check_and_build
         run: |
-          # (El script de este paso no necesita cambios)
           required_images=("auth-api" "frontend" "todos-api" "users-api" "log-message-processor")
           missing_images=()
           echo "Checking for required images in ACR: ${{ needs.deploy-infra-base.outputs.acr_login_server }}"
@@ -132,13 +126,11 @@ jobs:
               missing_images+=("$image")
             fi
           done
+
           if [ ${#missing_images[@]} -eq 0 ]; then
             echo "All required images exist. Skipping build."
-            echo "skip_build=true" >> $GITHUB_OUTPUT
-            echo "build_inputs={}" >> $GITHUB_OUTPUT
           else
             echo "Missing images: ${missing_images[*]}. Triggering build."
-            echo "skip_build=false" >> $GITHUB_OUTPUT
             inputs_json="{\"build_all\": false"
             for image in "${required_images[@]}"; do
               if [[ " ${missing_images[*]} " =~ " ${image} " ]]; then
@@ -148,47 +140,34 @@ jobs:
               fi
             done
             inputs_json+="}"
-            echo "build_inputs=$inputs_json" >> $GITHUB_OUTPUT
+            
+            echo "Setting AUTO_DEPLOY secret to false in target repo"
+            echo "false" | gh secret set AUTO_DEPLOY --repo $OWNER/$TARGET_REPO
+
+            echo "Triggering 'Build and Push Microservices' on branch '${{ env.TARGET_REPO_BRANCH }}'..."
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              /repos/$OWNER/$TARGET_REPO/actions/workflows/build-and-push.yml/dispatches \
+              --input <(echo "{\"ref\":\"${{ env.TARGET_REPO_BRANCH }}\",\"inputs\":${inputs_json}}")
+            
+            echo "Workflow triggered. Waiting..."
+            sleep 15
+
+            run_id=$(gh api repos/$OWNER/$TARGET_REPO/actions/workflows/build-and-push.yml/runs --jq '.workflow_runs[0].id')
+            if [ -z "$run_id" ]; then 
+              echo "Failed to get run ID."
+              exit 1
+            fi
+            
+            echo "Waiting for run ID: $run_id"
+            gh run watch $run_id --repo $OWNER/$TARGET_REPO --exit-status
           fi
-          
-  # TRABAJO 3: Disparar el build de las aplicaciones
-  build-apps:
-    name: 'Build Missing App Artifacts'
-    needs: check-images-in-acr
-    if: needs.check-images-in-acr.outputs.skip_build == 'false'
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
-      - name: Set AUTO_DEPLOY secret to false in target repo
-        run: echo "false" | gh secret set AUTO_DEPLOY --repo $OWNER/$TARGET_REPO
-
-      - name: Trigger the build workflow in external repo
-        run: |
-          echo "Triggering 'Build and Push Microservices' on branch '${{ env.TARGET_REPO_BRANCH }}'..."
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            /repos/$OWNER/$TARGET_REPO/actions/workflows/build-and-push.yml/dispatches \
-            -f ref='${{ env.TARGET_REPO_BRANCH }}' \
-            --input - <<< '{"inputs": ${{ needs.check-images-in-acr.outputs.build_inputs }} }'
-          echo "Workflow triggered. Waiting..."
-          sleep 15
-
-      - name: Wait for workflow run to complete
-        env:
-          WORKFLOW_NAME: 'build-and-push.yml'
-        run: |
-          run_id=$(gh api repos/$OWNER/$TARGET_REPO/actions/workflows/$WORKFLOW_NAME/runs --jq '.workflow_runs[0].id')
-          if [ -z "$run_id" ]; then exit 1; fi
-          echo "Waiting for run ID: $run_id"
-          gh run watch $run_id --repo $OWNER/$TARGET_REPO --exit-status
 
   # TRABAJO 4: Desplegar las aplicaciones
   deploy-apps:
     name: 'Deploy Apps'
-    needs: [check-images-in-acr, build-apps]
-    if: always() && needs.check-images-in-acr.result == 'success'
+    needs: [check-and-build-apps]
     runs-on: ubuntu-latest
     environment: production
 
