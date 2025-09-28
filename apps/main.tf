@@ -410,6 +410,3 @@ data "terraform_remote_state" "infra" {
     }
 
   }
-
-
-  # el patrón autoscaling ya esta implementado en cada contenedor con min_replicas y max_replicas, donde min_replicas es el numero minimo de instancias y max_replicas es el numero maximo de instancias que puede tener cada contenedor
