@@ -25,7 +25,7 @@ data "terraform_remote_state" "infra" {
 
     template {
         min_replicas = 1
-        max_replicas = 2 # Puedes ajustar el máximo según tus necesidades
+        max_replicas = 2
       
       container {
         name   = "todos-api"
@@ -96,7 +96,7 @@ data "terraform_remote_state" "infra" {
 
     template {
             min_replicas = 1
-        max_replicas = 2 # Puedes ajustar el máximo según tus necesidades
+        max_replicas = 2
       
       container {
         name   = "log-message-processor"
@@ -147,7 +147,7 @@ data "terraform_remote_state" "infra" {
 
     template {
             min_replicas = 1
-        max_replicas = 2 # Puedes ajustar el máximo según tus necesidades
+        max_replicas = 2
       
       container {
         name   = "frontend"
@@ -208,13 +208,13 @@ data "terraform_remote_state" "infra" {
 
     template {
         min_replicas = 1
-        max_replicas = 2 # Puedes ajustar el máximo según tus necesidades
+        max_replicas = 2
       
       container {
         name   = "users-api"
         image  = "${local.acr_name}/users-api:latest"
         cpu    = 1.0 
-        memory = "2.0Gi" # ajuste para hacer el patron circuit breaker
+        memory = "2.0Gi"
         env {
           name  = "JWT_SECRET"
           value = "PRFT"
@@ -267,7 +267,7 @@ data "terraform_remote_state" "infra" {
 
     template {
             min_replicas = 1
-        max_replicas = 2 # Puedes ajustar el máximo según tus necesidades
+        max_replicas = 2
       
       container {
         name   = "auth-api"
@@ -327,7 +327,7 @@ data "terraform_remote_state" "infra" {
 
     template {
             min_replicas = 1
-        max_replicas = 2 # Puedes ajustar el máximo según tus necesidades
+        max_replicas = 2
       
       container {
         name   = "redis"
@@ -358,7 +358,7 @@ data "terraform_remote_state" "infra" {
 
     template {
             min_replicas = 1
-        max_replicas = 2 # Puedes ajustar el máximo según tus necesidades
+        max_replicas = 2
       
       container {
         name   = "zipkin"
